@@ -40,28 +40,22 @@ st.markdown('''# How to use the agentic paper scraper
 '''
 )
 
-# Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
 
-# Chat input
 if prompt := st.chat_input("What is up?"):
-    # Add user message to chat history
     with st.chat_message('user'):
         st.markdown(prompt)
         st.session_state.messages.append({'role': 'user', 'content': prompt})
 
-    # Display assistant response with streaming
     with st.chat_message('assistant'):
         response_stream = chat(prompt)
-        response = st.write_stream(response_stream).get('data')
+        response = st.write_stream(response_stream)
         st.session_state.messages.append({'role': 'assistant', 'content': response})
 
-# Sidebar
 with st.sidebar:
     st.markdown('## Find specifics of the chat')
     
-    # Add clear chat button
     if st.button("Clear Chat"):
         st.session_state.messages = []

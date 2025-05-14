@@ -8,12 +8,12 @@ class PaperScraper:
         self.base_url = 'https://paperswithcode.com'
         self.latest = '/latest'
 
-    def get_papers_soup(self, page: str = 'lattest'):
-        with httpx.Client() as client:
+    async def get_papers_soup(self, page: str = 'lattest'):
+        async with httpx.AsyncClient() as client:
             if page == 'lattest':
-                response = client.get(self.base_url + self.latest)
+                response = await client.get(self.base_url + self.latest)
             elif page == 'trending':
-                response = client.get(self.base_url)
+                response = await client.get(self.base_url)
             else:
                 logging.error(f'Invalid page: {page}')
                 return
@@ -25,16 +25,16 @@ class PaperScraper:
                 logging.error(f'Error getting the papers: {e}')
                 return
 
-    def get_papers_link(self):
+    async def get_papers_link(self):
         self.papers_link = [self.base_url + title['href'] for title in self.paper_tittles]
         return self.papers_link
 
-    def get_papers_abstract(self):
+    async def get_papers_abstract(self):
         self.papers_abstract = []
         for link in self.papers_link:
-            with httpx.Client() as client:
+            async with httpx.AsyncClient() as client:
                 try:
-                    response = client.get(link)
+                    response = await client.get(link)
                     soup = BeautifulSoup(response.text, 'html.parser')
                     abstract_div = soup.find('div', class_='paper-abstract')
                     p_tag = abstract_div.find('p')
@@ -45,12 +45,12 @@ class PaperScraper:
                     self.papers_abstract.append(None)
         return self.papers_abstract
 
-    def get_papers_github(self):
+    async def get_papers_github(self):
         self.papers_github = []
         for link in self.papers_link:
-            with httpx.Client() as client:
+            async with httpx.AsyncClient() as client:
                 try:
-                    response = client.get(link)
+                    response = await client.get(link)
                     soup = BeautifulSoup(response.text, 'html.parser')
                     github_links = soup.find('a', href=lambda href: href and 'github.com' in href)
                     self.papers_github.append(github_links)
@@ -59,11 +59,11 @@ class PaperScraper:
                     self.papers_github.append(None)
         return self.papers_github
 
-    def returnable_text(self, page: str = 'lattest'):
-        self.get_papers_soup(page)
-        self.get_papers_link()
-        self.get_papers_abstract()
-        self.get_papers_github()
+    async def returnable_text(self, page: str = 'lattest'):
+        await self.get_papers_soup(page)
+        await self.get_papers_link()
+        await self.get_papers_abstract()
+        await self.get_papers_github()
         self.papers = []
         print(f"Lengths: titles={len(self.paper_tittles)}, abstracts={len(self.papers_abstract)}, github={len(self.papers_github)}")
         for i in range(len(self.paper_tittles)):

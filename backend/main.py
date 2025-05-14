@@ -1,56 +1,47 @@
-from fastapi import FastAPI, HTTPException,Request, WebSocket
-from typing import List, Dict, Optional
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi import FastAPI, HTTPException, WebSocket
 from scraper.paperscraper import PaperScraper
 from db.chroma import DBClient
-from backend.schemas import Request
+from backend.schemas import PostPaperList, GetPaper, GetPaperResponse
 from uuid import uuid4
-import json
-import asyncio
+import io
 
 app = FastAPI()
 scraper = PaperScraper()
 db_trending = DBClient('/tmp/chroma/trending')
 db_lattest = DBClient('/tmp/chroma/lattest')
 
-message_queue = asyncio.Queue()
-agent_queue = asyncio.Queue()
+message_queue = io.Queue()
+agent_queue = io.Queue()
 
-@app.post('/papers/post/trending')
-async def add_trending_papers():
+@app.post('/papers/post/')
+def add_trending_papers(post_paper_list: PostPaperList):
     try:
-        trending = scraper.returnable_text(page = 'trending')
-        for paper in trending:
-            db_trending.add_context(str(uuid4()), paper)
-        return {'message': 'Trending papers added successfully'}
+        if post_paper_list.page == 'trending':
+            db = db_trending
+        elif post_paper_list.page == 'lattest':
+            db = db_lattest
+        else:
+            raise HTTPException(status_code=400, detail='Invalid page')
+        for paper in post_paper_list.papers:
+            db.add_context(str(uuid4()), paper.content)
+        return {'message': f'Papers added successfully to {post_paper_list.page}'}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get('/papers/get/trending')
-async def get_trending_papers(query: str, n_results: int):
+@app.get('/papers/get/')
+def get_papers(get_paper : GetPaper):
     try:
-        trending = db_trending.query(query, n_results)
-        return {'papers': trending}
+        if get_paper.page == 'trending':
+            db = db_trending
+        elif get_paper.page == 'lattest':
+            db = db_lattest
+        else:
+            raise HTTPException(status_code=400, detail='Invalid page')
+        papers = db.query(get_paper.query, get_paper.n_results)
+        return GetPaperResponse(page = get_paper.page, papers = papers)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post('/papers/post/lattest')
-async def add_latest_papers():
-    try:
-        lattest = scraper.returnable_text(page = 'lattest')
-        for paper in lattest:
-            db_lattest.add_context(str(uuid4()), paper)
-        return {'message': 'Latest papers added successfully'}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get('/papers/get/lattest')
-async def get_latest_papers(query: str, n_results: int):
-    try:
-        lattest = db_lattest.query(query, n_results)
-        return {'papers': lattest}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.websocket('/chat')
 async def websocket_chat(websocket: WebSocket):
@@ -63,7 +54,7 @@ async def websocket_chat(websocket: WebSocket):
             agent_queue.task_done()
 
 
-    forward_task = asyncio.create_task(forward_agent_messages())
+    forward_task = io.create_task(forward_agent_messages())
 
     try:
         while True:
@@ -77,7 +68,7 @@ async def websocket_chat(websocket: WebSocket):
         forward_task.cancel()
         try:
             await forward_task
-        except asyncio.CancelledError:
+        except io.CancelledError:
             pass
 
 @app.websocket('/agent_ws')
@@ -90,7 +81,7 @@ async def websocket_agent(websocket: WebSocket):
             await websocket.send_text(message)
             message_queue.task_done()
 
-    forward_task = asyncio.create_task(forward_client_messages())
+    forward_task = io.create_task(forward_client_messages())
 
     try:
         while True:
@@ -102,7 +93,7 @@ async def websocket_agent(websocket: WebSocket):
         forward_task.cancel()
         try:
             await forward_task
-        except asyncio.CancelledError:
+        except io.CancelledError:
             pass
 
     

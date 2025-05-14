@@ -1,26 +1,25 @@
 # Core dependencies
-python-dotenv==1.0.0
-fastapi==0.110.0
-uvicorn==0.29.0
-pydantic==2.6.3
-httpx==0.27.0
-websockets==12.0
-asyncio==3.4.3
+python-dotenv
+fastapi
+uvicorn
+pydantic
+httpx
+websockets
+asyncio
 
 # Google ADK and AI
-google-adk==0.1.0
-google-genai==0.3.0
-lite-llm==0.1.0
+google-adk
+google-genai
+litellm
 
 # Database
-chromadb==0.4.22
+chromadb
 
 # Web scraping
-beautifulsoup4==4.12.3
+beautifulsoup4
 
 # Utilities
-uuid==1.30
-zoneinfo==0.2.1
+uuid
 
 # Streamlit for UI
-streamlit==1.32.0
+streamlit
