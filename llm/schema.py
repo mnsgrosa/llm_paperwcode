@@ -1,10 +1,13 @@
 from pydantic import BaseModel
 
 class StructuredQuery(BaseModel):
-    topic: str
     query: str
     n_results_lattest: int
     n_results_trending: int
+
+class PaperTopic(BaseModel):
+    topic: str
+    papers: list[StructuredPaper]
 
 class StructuredPaper(BaseModel):
     title: str
