@@ -14,3 +14,6 @@ class StructuredPaper(BaseModel):
     authors: list[str]
     abstract: str
     url: str
+
+class GetPaper(BaseModel):
+    papers: list[StructuredPaper]
