@@ -38,7 +38,7 @@ def get_papers(get_paper : GetPaper):
         else:
             raise HTTPException(status_code=400, detail='Invalid page')
         papers = db.query(get_paper.query, get_paper.n_results)
-        return GetPaperResponse(page = get_paper.page, papers = papers)
+        return GetPaperResponse(papers = papers)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
